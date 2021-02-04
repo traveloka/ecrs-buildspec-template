@@ -1,0 +1,22 @@
+---
+version: 0.2
+
+env:
+  shell: bash
+
+phases:
+  install:
+    runtime-versions:
+      docker: 18
+    commands:
+      - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+      - apt update
+      - apt install jq -y
+      - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      - unzip awscliv2.zip
+      - ./aws/install
+  build:
+    commands:
+      - registry=$(sed -e 's/^"//' -e 's/"$//' <<< "$(cat config.json | jq ".internal_registry_url")")
+      - aws ecr get-login-password --region ap-southeast-1 | docker login --password-stdin --username AWS $registry
+      - python ecrsync.py
